@@ -14,8 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
      - name: Build Docker image
-      run: |
-        docker build -t ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
+       run: docker build -t ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
 
     - name: Test Docker image
       run: |
