@@ -1,4 +1,4 @@
-# ⚙️ CI Pipeline for Dockerized Web App (GitHub Actions + AWS ECR)
+# ⚙️ CI Pipeline for Dockerized Web App (GitHub Actions + AWS ECR) 
 
 A production-ready **Continuous Integration (CI)** pipeline that builds, validates, and publishes Docker images to **AWS ECR**, then safely merges feature branches into `main` using **GitHub Actions**.
 
