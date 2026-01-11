@@ -1,31 +1,20 @@
-# 🚀 Web App CI Pipeline with GitHub Actions & AWS ECR
+# ⚙️ CI Pipeline for Dockerized Web App (GitHub Actions + AWS ECR)
 
-A modern CI pipeline that automatically builds, validates, and pushes Docker images to **AWS ECR** and safely merges feature branches into `main` using **GitHub Actions**.
-
----
-
-## ✨ Features
-
-- 🔁 Automatic CI trigger on branch push  
-- 🐳 Docker image build & validation  
-- 📦 Push versioned images to AWS ECR  
-- 🔐 Secure AWS authentication via GitHub Secrets  
-- 🔀 Auto-merge to `main` on successful pipeline  
-- 🧼 Keeps `main` branch always production-ready  
+A production-ready **Continuous Integration (CI)** pipeline that builds, validates, and publishes Docker images to **AWS ECR**, then safely merges feature branches into `main` using **GitHub Actions**.
 
 ---
 
-## 🏗️ CI Workflow Overview
+## 🔄 How It Works
 
 ```text
 Push to feature/dev branch
         ↓
-GitHub Actions triggered
+GitHub Actions CI starts
         ↓
-Docker image build
+Docker image is built
         ↓
-Docker validation/tests
+Image validation / tests
         ↓
 Push image to AWS ECR
         ↓
-Merge branch → main
+Auto-merge into main
