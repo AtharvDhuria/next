@@ -8,47 +8,64 @@ on:
       - feature/*
 
 permissions:
+  id-token: write
   contents: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
+    # ✅ STEP 3: Job-level environment variables
+    env:
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
     steps:
-    - name: Build Docker image
-      run: |
-        docker build -t ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
+      # ✅ REQUIRED: Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Test Docker image
-      run: |
-        docker run --rm ${{ secrets.ECR_REPOSITORY }}:image echo "Docker image OK"
-        
-    - name: Tag Docker image
-      run: |
-        docker tag \
-          ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} \
-          ${{ secrets.ECR_REPOSITORY }}:latest
-        
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCESS_KEY_ID }}:role/${{ secrets.AWS_ACCESS_USER }}
-        aws-region: ${{ secrets.AWS_REGION }}
-        audience: sts.amazonaws.com
-        output-env-credentials: true
+      # ✅ Debug (safe) – confirms env vars are NOT blank
+      - name: Verify environment variables
+        run: |
+          echo "ECR_REPOSITORY is set: ${ECR_REPOSITORY:+YES}"
+          echo "AWS_REGION is set: ${AWS_REGION:+YES}"
 
-    - name: Login to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY:${{ github.sha }} .
 
-    - name: Push Docker image to ECR
-      run: |
-        docker push ${{ secrets.ECR_REPOSITORY }}:image
-        docker push ${{ secrets.ECR_REPOSITORY }}:latest
+      - name: Test Docker image
+        run: |
+          docker run --rm $ECR_REPOSITORY:${{ github.sha }} echo "Docker image OK"
 
-    - name: Merge branch into main
-      run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git fetch origin
-        git checkout main
-        git merge origin/${{ github.ref_name }}
-        git push origin main
+      - name: Tag Docker image
+        run: |
+          docker tag \
+            $ECR_REPOSITORY:${{ github.sha }} \
+            $ECR_REPOSITORY:latest
+
+      # ✅ CORRECT AWS OIDC CONFIG (no access keys in secrets)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/GitHubActionsRole
+          aws-region: $AWS_REGION
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push $ECR_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REPOSITORY:latest
+
+      - name: Merge branch into main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git fetch origin
+          git checkout main
+          git merge origin/${{ github.ref_name }}
+          git push origin main
