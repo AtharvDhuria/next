@@ -1,0 +1,29 @@
+# Production Dockerfile - serves pre-built Next.js app
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production
+
+# Copy built application
+COPY .next ./.next
+COPY public ./public
+
+# Create a non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# Change ownership of the app directory
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Expose Next.js port
+EXPOSE 3000
+
+# Start the app
+CMD ["npm", "start"]
