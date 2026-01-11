@@ -18,3 +18,4 @@ Image validation / tests
 Push image to AWS ECR
         ↓
 Auto-merge into main
+"# CI test" 
