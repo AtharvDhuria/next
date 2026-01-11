@@ -16,11 +16,11 @@ jobs:
     steps:
     - name: Build Docker image
       run: |
-        docker build -t ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
+        docker build -t :image .
 
     - name: Test Docker image
       run: |
-        docker run --rm ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} echo "Docker image OK"
+        docker run --rm ${{ secrets.ECR_REPOSITORY }}:image echo "Docker image OK"
 
         
     - name: Configure AWS credentials
@@ -36,7 +36,7 @@ jobs:
 
     - name: Push Docker image to ECR
       run: |
-        docker push ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+        docker push ${{ secrets.ECR_REPOSITORY }}:image
         docker push ${{ secrets.ECR_REPOSITORY }}:latest
 
     - name: Merge branch into main
