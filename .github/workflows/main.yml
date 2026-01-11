@@ -16,7 +16,7 @@ jobs:
     steps:
     - name: Build Docker image
       run: |
-        docker build -t image .
+        docker build -t ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
 
     - name: Test Docker image
       run: |
