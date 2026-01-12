@@ -1,70 +1,49 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - dev
-      - feature/*
-      
+    branches: main
+
 env:
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
 permissions:
-  id-token: write
   contents: write
+  pull-requests: write
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # ✅ REQUIRED: Checkout repo
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      # ✅ Debug (safe) – confirms env vars are NOT blank
-      - name: Verify environment variables
-        run: |
-          echo "ECR_REPOSITORY is set: ${ECR_REPOSITORY:+YES}"
-          echo "AWS_REGION is set: ${AWS_REGION:+YES}"
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build Docker image
-        run: |
-          docker build -t $ECR_REPOSITORY:${{ github.sha }} .
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Test Docker image
-        run: |
-          docker run --rm $ECR_REPOSITORY:${{ github.sha }} echo "Docker image OK"
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Tag Docker image
-        run: |
-          docker tag \
-            $ECR_REPOSITORY:${{ github.sha }} \
-            $ECR_REPOSITORY:latest
-
-      # ✅ CORRECT AWS OIDC CONFIG (no access keys in secrets)
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/GitHubActionsRole
-          aws-region: $AWS_REGION
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Push Docker image to ECR
-        run: |
-          docker push $ECR_REPOSITORY:${{ github.sha }}
-          docker push $ECR_REPOSITORY:latest
-
-      - name: Merge branch into main
-        if: github.ref != 'refs/heads/main'
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git fetch origin
-          git checkout main
-          git merge origin/${{ github.ref_name }}
-          git push origin main
+    - name: Merge to main
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git checkout main
+        git pull origin main
+        git merge origin/${{ github.ref_name }} --no-ff -m "Merge ${{ github.ref_name }} after successful ECR push"
+        git push origin main
