@@ -13,6 +13,15 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
+    - name: Read and display secrets (DEBUG ONLY)
+      run: |
+        echo "🔍 DEBUG: Reading AWS secrets..."
+        echo "AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}"
+        echo "AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+        echo "AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}"
+        echo "⚠️  WARNING: Secrets are visible in logs - remove this step after debugging!"
+        echo "✅ Secrets loaded and displayed successfully!"
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
